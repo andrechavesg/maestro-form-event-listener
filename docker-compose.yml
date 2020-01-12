@@ -1,0 +1,53 @@
+version: '3.5'
+services:
+  apache:
+    build: .docker/apache
+    container_name: apache
+    ports:
+      - 80:80
+    volumes:
+      - "./:/home/wwwroot:cached"
+      - ".docker/config/vhosts:/etc/apache2/sites-enabled:cached"
+      - ".docker/logs/apache:/var/log/apache2/:cached"
+    depends_on:
+      - php
+    networks:
+      - network
+
+  mysql:
+    image: mysql
+    command: "--default-authentication-plugin=mysql_native_password"
+    container_name: mysql
+    volumes:
+      - "dbdata:/var/lib/mysql"
+      - "./dump:/dump"
+    environment:
+      MYSQL_ROOT_PASSWORD: x5c2bgwj
+      MYSQL_DATABASE: vivendas
+      MYSQL_USER: vivenda
+      MYSQL_PASSWORD: x5c2bgwj
+    ports:
+      - 3306:3306
+    networks:
+      - network
+
+  php:
+    build: .docker/php
+    container_name: php
+    working_dir: /home/wwwroot
+    volumes:
+      - "./:/home/wwwroot:cached"
+      - "./var/logs:/app/var/logs"
+      - "./var/cache.:/app/var/cache"
+    command: bash -c "composer install && php-fpm"
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    networks:
+      - network
+networks:
+  network:
+
+volumes:
+  dbdata:
